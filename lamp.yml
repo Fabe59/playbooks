@@ -1,0 +1,40 @@
+---
+- hosts: 127.0.0.1
+  become: true
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+   - name : Update APT
+     apt:
+       update_cache: yes
+
+   - name: Install Apache2
+     apt: name={{ item }} update_cache=yes state=latest
+     loop: [ 'apache2', 'apache2-doc' ]
+
+   - name: Starting Apache2
+     become: yes
+     service: 
+       name: apache2
+       state: started
+
+   - name: Install PHP
+     apt: name={{ item }} update_cache=yes state=latest
+     loop: [ 'php', 'libapache2-mod-php', 'php-mysql' ]
+   
+   - name: Pour tester l'installation de PHP
+     template:
+       src: "files/info.php.j2"
+       dest: "/var/www/html/info.php"
+
+   - name: Install MySQL
+     apt:
+       name: mysql-server
+       state: latest
+
+   - name: Sets the root password
+     mysql_user:
+       name: root
+       password: "{{ mysql_root_password }}"
+       login_unix_socket: /var/run/mysqld/mysqld.sock
